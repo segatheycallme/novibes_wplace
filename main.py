@@ -1,18 +1,32 @@
+import sys
 from selenium.webdriver.common.keys import Keys
 from seleniumbase import SB
+
+URL = "https://wplace.live/"
+
+
+# account parsing (plaintext rlly bad)
+accounts = []
+
+with open("plaintext_info") as file:
+    accounts_str = file.read()
+    for i in accounts_str.split(";"):
+        accounts.append(i.split(":"))
+    if accounts[-1] == ["\n"]:
+        accounts.pop()
+print(f"\n{len(accounts)} account(s) added")
 
 
 def get_cookies(user, password, sb) -> str | None:
     sb.execute_cdp_cmd("Storage.clearCookies", {})
 
-    url = "https://wplace.live/"
-    sb.open(url)
+    sb.open(URL)
 
     sb.click("//button[text()='Log in']")
 
-    sb.sleep(3)
-    sb.uc_gui_click_captcha()
-    sb.sleep(1)
+    # captcha
+    sb.sleep(4)
+    sb.click(".mt-2.flex.flex-col.items-center.gap-1")
 
     sb.click("//a[text()=' Login with Google']")
 
@@ -32,32 +46,43 @@ def get_cookies(user, password, sb) -> str | None:
 
 
 with SB(uc=True, headed=True, proxy="localhost:8080") as sb:
-    url = "https://wplace.live/"
+    # init
+    sb.open(URL)
 
-    cookies = [
-        {
-            "domain": ".backend.wplace.live",
-            "expires": 2000000000,
-            "httpOnly": True,
-            "name": "j",
-            "path": "/",
-            "priority": "Medium",
-            "sameParty": False,
-            "sameSite": "Lax",
-            "secure": True,
-            "session": False,
-            "size": 250,
-            "sourcePort": 443,
-            "sourceScheme": "Secure",
-            "value": "",
-        },
-    ]
-    sb.execute_cdp_cmd("Storage.setCookies", {"cookies": cookies})
-
-    sb.open(url)
     sb.execute_script(
         'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
     )
+
+    cookies = []
+    for acc in accounts:
+        cookie = get_cookies(acc[0], acc[1], sb)
+        if cookie is None:
+            print(f"Failed to login user: {acc[0]}; skipping!")
+            continue
+        cookies.append(cookie)
+
+    # cookies = [
+    #     {
+    #         "domain": ".backend.wplace.live",
+    #         "expires": 2000000000,
+    #         "httpOnly": True,
+    #         "name": "j",
+    #         "path": "/",
+    #         "priority": "Medium",
+    #         "sameParty": False,
+    #         "sameSite": "Lax",
+    #         "secure": True,
+    #         "session": False,
+    #         "size": 250,
+    #         "sourcePort": 443,
+    #         "sourceScheme": "Secure",
+    #         "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjgwOTgzNTAsInNlc3Npb25JZCI6Im9tLWhIMVhmV2dlSUg3SmtTU2pxQS1WdW8wYTdlZnJ4ek1NR3VyQ3RENzA9IiwiaXNzIjoid3BsYWNlIiwiZXhwIjoxNzU5NDM0OTIyLCJpYXQiOjE3NTgxMzg5MjJ9.iRPi7jGy2Ba6OhSx6SEejmnpIvtWroYM4G158O7JwMM",
+    #     },
+    # ]
+    print(cookies)
+    sys.exit(0)
+    sb.execute_cdp_cmd("Storage.setCookies", {"cookies": cookies})
+
     sb.sleep(1)
     sb.refresh()
 
