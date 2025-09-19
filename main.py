@@ -45,6 +45,47 @@ def get_cookies(user, password, sb) -> str | None:
     return
 
 
+def paint_pixel(cookie: str, sb):
+    # assume already on wplace.live
+    sb.execute_cdp_cmd("Storage.clearCookies", {})  # possibly useless
+    sb.execute_cdp_cmd(
+        "Storage.setCookies",
+        {
+            "cookies": [
+                {
+                    "domain": ".backend.wplace.live",
+                    "expires": 2000000000,
+                    "httpOnly": True,
+                    "name": "j",
+                    "path": "/",
+                    "priority": "Medium",
+                    "sameParty": False,
+                    "sameSite": "Lax",
+                    "secure": True,
+                    "session": False,
+                    "size": len(cookie) + 1,  # ???
+                    "sourcePort": 443,
+                    "sourceScheme": "Secure",
+                    "value": cookie,
+                }
+            ]
+        },
+    )
+    sb.refresh()
+
+    # clear rules modal (stupid)
+    sb.sleep(1)
+    sb.refresh()
+
+    # captcha
+    sb.sleep(4)
+    sb.click(".z-100")
+
+    sb.click("div.absolute.bottom-3.left-1\\/2.z-30.-translate-x-1\\/2")
+    sb.click_with_offset("body", 200, 200)  # somewhere on canvas
+    sb.click("div.absolute.bottom-0.left-1\\/2.-translate-x-1\\/2")
+
+
 with SB(uc=True, headed=True, proxy="localhost:8080") as sb:
     # init
     sb.open(URL)
@@ -61,44 +102,7 @@ with SB(uc=True, headed=True, proxy="localhost:8080") as sb:
             continue
         cookies.append(cookie)
 
-    # cookies = [
-    #     {
-    #         "domain": ".backend.wplace.live",
-    #         "expires": 2000000000,
-    #         "httpOnly": True,
-    #         "name": "j",
-    #         "path": "/",
-    #         "priority": "Medium",
-    #         "sameParty": False,
-    #         "sameSite": "Lax",
-    #         "secure": True,
-    #         "session": False,
-    #         "size": 250,
-    #         "sourcePort": 443,
-    #         "sourceScheme": "Secure",
-    #         "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjgwOTgzNTAsInNlc3Npb25JZCI6Im9tLWhIMVhmV2dlSUg3SmtTU2pxQS1WdW8wYTdlZnJ4ek1NR3VyQ3RENzA9IiwiaXNzIjoid3BsYWNlIiwiZXhwIjoxNzU5NDM0OTIyLCJpYXQiOjE3NTgxMzg5MjJ9.iRPi7jGy2Ba6OhSx6SEejmnpIvtWroYM4G158O7JwMM",
-    #     },
-    # ]
-    print(cookies)
-    sys.exit(0)
-    sb.execute_cdp_cmd("Storage.setCookies", {"cookies": cookies})
+    for cookie in cookies:
+        paint_pixel(cookie, sb)
 
     sb.sleep(1)
-    sb.refresh()
-
-    # captcha
-    sb.sleep(5)
-    # dogshit tailwind ily ily ily ily
-    sb.click(".z-100")
-    sb.sleep(1)
-
-    sb.click("div.absolute.bottom-3.left-1\\/2.z-30.-translate-x-1\\/2")
-    sb.click_with_offset("body", 200, 200)
-    sb.click("div.absolute.bottom-0.left-1\\/2.-translate-x-1\\/2")
-
-    # print(get_cookies("segq3.k", "sddMake008", sb))
-
-    input()
-    print(":3")
-
-    sb.sleep(500)
