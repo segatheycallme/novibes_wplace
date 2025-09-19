@@ -1,20 +1,54 @@
-import sys
+from os.path import isfile
 from selenium.webdriver.common.keys import Keys
 from seleniumbase import SB
 
 URL = "https://wplace.live/"
 
 
-# account parsing (plaintext rlly bad)
-accounts = []
+def main():
+    # data parsing
+    accounts = []
+    cookies = []
+    if isfile("data/cookies"):
+        with open("data/cookies") as file:
+            cookies = [cookie.strip() for cookie in file.readlines()]
+        print(f"\n{len(cookies)} logged in account(s) found")
+    else:
+        # TODO: not plaintext
+        with open("data/accounts") as file:
+            accounts_str = file.read()
+            for i in accounts_str.split(";"):
+                accounts.append(i.split(":"))
+            if accounts[-1] == ["\n"]:
+                accounts.pop()
+        print(f"{len(accounts)} account(s) added")
 
-with open("plaintext_info") as file:
-    accounts_str = file.read()
-    for i in accounts_str.split(";"):
-        accounts.append(i.split(":"))
-    if accounts[-1] == ["\n"]:
-        accounts.pop()
-print(f"\n{len(accounts)} account(s) added")
+    with SB(uc=True, headed=True, proxy="localhost:8080") as sb:
+        # init
+        sb.open(URL)
+
+        sb.execute_script(
+            'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
+        )
+
+        for acc in accounts:
+            cookie = get_cookies(acc[0], acc[1], sb)
+            if cookie is None:
+                print(f"Failed to login account: {acc[0]}; skipping!")
+                continue
+            cookies.append(cookie)
+
+        # update stored cookies
+        with open("data/cookies", "w") as file:
+            file.write("\n".join(cookies))
+
+        print("here")
+        input()
+
+        for cookie in cookies:
+            paint_pixel(cookie, sb)
+
+        sb.sleep(1)
 
 
 def get_cookies(user, password, sb) -> str | None:
@@ -74,6 +108,7 @@ def paint_pixel(cookie: str, sb):
     sb.refresh()
 
     # clear rules modal (stupid)
+    # TODO: unnescessary refresh
     sb.sleep(1)
     sb.refresh()
 
@@ -86,23 +121,5 @@ def paint_pixel(cookie: str, sb):
     sb.click("div.absolute.bottom-0.left-1\\/2.-translate-x-1\\/2")
 
 
-with SB(uc=True, headed=True, proxy="localhost:8080") as sb:
-    # init
-    sb.open(URL)
-
-    sb.execute_script(
-        'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
-    )
-
-    cookies = []
-    for acc in accounts:
-        cookie = get_cookies(acc[0], acc[1], sb)
-        if cookie is None:
-            print(f"Failed to login user: {acc[0]}; skipping!")
-            continue
-        cookies.append(cookie)
-
-    for cookie in cookies:
-        paint_pixel(cookie, sb)
-
-    sb.sleep(1)
+if __name__ == "__main__":
+    main()
