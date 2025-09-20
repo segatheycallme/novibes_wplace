@@ -47,6 +47,11 @@ class CustomAddon:
                 if len(data["colors"]) == 1:  # dumb check
                     data = data | get_pixels(caps["charges"], caps["colors_bitmap"])
 
+                    path_split = flow.request.path.split("/")
+                    path_split[-1] = str(data["ty"])
+                    path_split[-2] = str(data["tx"])
+                    flow.request.path = "/".join(path_split)
+
                 flow.request.set_text(json.dumps(data))
                 print(data)
         except Exception as e:

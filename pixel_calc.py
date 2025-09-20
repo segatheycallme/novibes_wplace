@@ -26,7 +26,7 @@ def get_pixels(pixels_num: int, colors_bitmap: int, todo_pixels=todo_pixels):
                     coords.append(pixel[1])
                     colors.append(color)
             if len(colors) > 0:
-                return {"colors": colors, "coords": coords, "tx": 1141, "ty": 751}
+                return {"colors": colors, "coords": coords, "tx": tx, "ty": ty}
 
     # :(
     return {"colors": [], "coords": [], "tx": 0, "ty": 0}
