@@ -1,4 +1,3 @@
-import asyncio
 import json
 from typing import Callable
 
@@ -6,32 +5,53 @@ from mitmproxy.http import HTTPFlow
 from mitmproxy.options import Options
 from mitmproxy.tools.dump import DumpMaster
 
+from pixel_calc import get_pixels, todo_pixels
+
+capabilities = {}
+
 
 class CustomAddon:
+    def response(self, flow: HTTPFlow) -> None:
+        if "https://backend.wplace.live/me" == flow.request.url:
+            try:
+                cookies = flow.request.headers.get("cookie")
+                if not cookies:
+                    return
+
+                j_token = cookies.split("=")[1]
+                if flow.response is not None:
+                    me = json.loads(flow.response.get_text() or "")
+                    capabilities[j_token] = {
+                        "charges": me["charges"]["count"],
+                        "colors_bitmap": me["extraColorsBitmap"],
+                    }
+            except Exception as e:
+                print(1)
+                print(e)
+
     def request(self, flow: HTTPFlow) -> None:
-        if (
-            flow.request.method == "POST"
-            and "https://backend.wplace.live/s0/pixel" in flow.request.url
-        ):
-            data = json.loads(flow.request.get_text() or "")
-            if len(data["colors"]) == 1:
-                data["colors"] = [5, 4, 3, 2, 1]
-                data["coords"] = [
-                    415,
-                    628,
-                    415,
-                    629,
-                    415,
-                    630,
-                    415,
-                    631,
-                    415,
-                    632,
-                ]
-                # 415, 628,
-            flow.request.set_text(json.dumps(data))
-            print(data)
-            return
+        try:
+            if (
+                flow.request.method == "POST"
+                and "https://backend.wplace.live/s0/pixel" in flow.request.url
+            ):
+                j_token = flow.request.headers["cookie"].split("=")[1]
+                caps = capabilities.get(j_token)
+                if not caps:
+                    print(
+                        f"Capabilities not found for token: {j_token}, may resolve automatically"
+                    )
+                    caps = {"charges": 30, "colors_bitmap": 0}
+                data = json.loads(flow.request.get_text() or "")
+
+                if len(data["colors"]) == 1:  # dumb check
+                    data = data | get_pixels(caps["charges"], caps["colors_bitmap"])
+
+                flow.request.set_text(json.dumps(data))
+                print(data)
+        except Exception as e:
+            print(2)
+            print(e)
 
 
 class ProxyServer(DumpMaster):
@@ -75,11 +95,7 @@ def on_shutdown(exc: Exception | None):
     # gracefully close your work
 
 
-def matcher(flow: HTTPFlow):
-    return "https://www.httpbin.org/" in flow.request.url
-
-
-async def main():
+async def run():
     opts = Options(
         listen_host="127.0.0.1",
         listen_port=8080,
@@ -90,6 +106,3 @@ async def main():
         CustomAddon(),
     )
     await proxy.run(on_shutdown=on_shutdown)
-
-
-asyncio.run(main())

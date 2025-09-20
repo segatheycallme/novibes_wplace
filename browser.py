@@ -1,9 +1,36 @@
+import asyncio
 from os.path import isfile
 
 from selenium.webdriver.common.keys import Keys
 from seleniumbase import SB
 
 from main import PROXY, URL
+
+
+async def run_async(cookies: list[str]):
+    # wait for proxy to startup
+    await asyncio.sleep(3)
+    run(cookies)
+
+
+def run(cookies: list[str]):
+    with SB(uc=True, headed=True, proxy=PROXY) as sb:
+        # set location (not needed)
+        sb.open(URL)
+        sb.execute_script(
+            'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
+        )
+
+        # TODO: 15 min timer loop here
+        for cookie in cookies:
+            try:
+                paint_pixel(cookie, sb)
+            except Exception as err:
+                print(f"paint_pixel failed for user f{cookie}, reason: {err}")
+                # retry
+
+        print("Done!")
+        sb.sleep(5)
 
 
 def get_cookies():
@@ -21,18 +48,17 @@ def get_cookies():
             if accounts[-1] == ["\n"]:
                 accounts.pop()
         print(f"{len(accounts)} account(s) added")
+        with SB(uc=True, headed=True) as sb:
+            for acc in accounts:
+                cookie = get_cookies_for_acc(acc[0], acc[1], sb)
+                if cookie is None:
+                    print(f"Failed to login account: {acc[0]}; skipping!")
+                    continue
+                cookies.append(cookie)
 
-    with SB(uc=True, headed=True, proxy=PROXY) as sb:
-        for acc in accounts:
-            cookie = get_cookies_for_acc(acc[0], acc[1], sb)
-            if cookie is None:
-                print(f"Failed to login account: {acc[0]}; skipping!")
-                continue
-            cookies.append(cookie)
-
-        # update stored cookies
-        with open("data/cookies", "w") as file:
-            file.write("\n".join(cookies))
+            # update stored cookies
+            with open("data/cookies", "w") as file:
+                file.write("\n".join(cookies))
 
     print(f"{len(cookies)} account(s) logged in")
     return cookies
