@@ -5,7 +5,7 @@ from mitmproxy.http import HTTPFlow
 from mitmproxy.options import Options
 from mitmproxy.tools.dump import DumpMaster
 
-from pixel_calc import get_pixels, todo_pixels
+from pixel_calc import get_pixels
 
 capabilities = {}
 
@@ -45,7 +45,9 @@ class CustomAddon:
                 data = json.loads(flow.request.get_text() or "")
 
                 if len(data["colors"]) == 1:  # dumb check
-                    data = data | get_pixels(caps["charges"], caps["colors_bitmap"])
+                    data = data | get_pixels(
+                        caps["charges"], caps["colors_bitmap"], todo_pixels
+                    )
 
                     path_split = flow.request.path.split("/")
                     path_split[-1] = str(data["ty"])
@@ -100,7 +102,7 @@ def on_shutdown(exc: Exception | None):
     # gracefully close your work
 
 
-async def run():
+async def run(mmm):
     opts = Options(
         listen_host="127.0.0.1",
         listen_port=8080,
@@ -110,4 +112,6 @@ async def run():
     proxy.addons.add(
         CustomAddon(),
     )
+    global todo_pixels
+    todo_pixels = mmm
     await proxy.run(on_shutdown=on_shutdown)

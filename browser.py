@@ -21,13 +21,18 @@ def run(cookies: list[str]):
             'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
         )
 
-        # TODO: 15 min timer loop here
-        for cookie in cookies:
+        while True:
+            for cookie in cookies:
+                try:
+                    paint_pixel(cookie, sb)
+                except Exception as err:
+                    print(f"paint_pixel failed for user f{cookie}, reason: {err}")
+                    # retry
             try:
-                paint_pixel(cookie, sb)
-            except Exception as err:
-                print(f"paint_pixel failed for user f{cookie}, reason: {err}")
-                # retry
+                # TODO: better 15 min timer loop here
+                sb.sleep(60 * 1)
+            except KeyboardInterrupt:
+                break
 
         print("Done!")
         sb.sleep(5)
