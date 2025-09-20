@@ -9,12 +9,14 @@ color_lookup = {
 
 
 # TODO: color_bitmap
-def get_pixels(pixels_num: int, colors_bitmap: int, todo_pixels):
+def get_pixels(pixels_num: int, colors_bitmap: int, todo_pixels, skip_transparent=True):
     colors = []
     coords = []
     for tx in todo_pixels.keys():
         for ty in todo_pixels[tx].keys():
             for color in todo_pixels[tx][ty].keys():
+                if skip_transparent and color == 0:
+                    continue
                 while len(colors) < pixels_num and len(todo_pixels[tx][ty][color]) > 0:
                     pixel = todo_pixels[tx][ty][color].pop()
                     coords.append(pixel[0])
