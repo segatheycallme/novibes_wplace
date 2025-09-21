@@ -30,7 +30,7 @@ def run(cookies: list[str]):
                     # retry
             try:
                 # TODO: better 15 min timer loop here
-                sb.sleep(60 * 1)
+                sb.sleep(10 * 60)
             except KeyboardInterrupt:
                 break
 
