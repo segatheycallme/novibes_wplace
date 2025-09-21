@@ -20,7 +20,8 @@ capabilities = {}
 async def main():
     # load image
     global todo_pixels
-    todo_pixels = pixel_calc.generate_pixels("frown.png", 1141, 751, 440, 570)
+    todo_pixels = pixel_calc.generate_pixels("smile.png", 1141, 751, 995, 995)
+    pixel_calc.update_pixels(todo_pixels)
 
     # data parsing and logging in
     cookies = browser.get_cookies()
@@ -37,6 +38,7 @@ def main_loop():
             print("awaiting")
             input()
             todo_pixels = pixel_calc.generate_pixels("smile.png", 1141, 751, 440, 570)
+            pixel_calc.update_pixels(todo_pixels)
     except KeyboardInterrupt:
         pass
 
