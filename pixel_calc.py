@@ -133,7 +133,6 @@ def update_pixels(todo_pixels):
     new_todo = {}
     for tx in todo_pixels.keys():
         for ty in todo_pixels[tx].keys():
-            print(tx, ty)
             urllib.request.urlretrieve(
                 f"https://backend.wplace.live/files/s0/tiles/{tx}/{ty}.png",
                 f"data/{tx}_{ty}.png",
@@ -147,10 +146,3 @@ def update_pixels(todo_pixels):
         for y in todo_pixels[x].keys():
             for color in todo_pixels[x][y].keys():
                 todo_pixels[x][y][color] -= new_todo[x][y][color]
-
-
-# todo_pixels = generate_pixels("smile.png", 1141, 751, 995, 995)
-# todo_pixels = generate_pixels("smile.png", 1141, 751, 440, 570)
-# update_pixels(todo_pixels)
-# print(todo_pixels)
-# print(get_pixels(100, 0, todo_pixels))

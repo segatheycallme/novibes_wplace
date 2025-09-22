@@ -1,6 +1,7 @@
 import asyncio
 import json
 from typing import Callable
+from datetime import datetime
 
 from mitmproxy.http import HTTPFlow
 from mitmproxy.options import Options
@@ -20,7 +21,9 @@ capabilities = {}
 async def main():
     # load image
     global todo_pixels
-    todo_pixels = pixel_calc.generate_pixels("smile.png", 1141, 751, 995, 995)
+    todo_pixels = pixel_calc.generate_pixels(
+        "converted_chopsuy.png", 1141, 752, 340, 160
+    )
     pixel_calc.update_pixels(todo_pixels)
 
     # data parsing and logging in
@@ -37,14 +40,31 @@ def main_loop():
         while True:
             print("awaiting")
             input()
-            todo_pixels = pixel_calc.generate_pixels("smile.png", 1141, 751, 440, 570)
-            pixel_calc.update_pixels(todo_pixels)
+            print("nothing")
+            # todo_pixels = pixel_calc.generate_pixels("smile.png", 1141, 751, 440, 570)
+            # pixel_calc.update_pixels(todo_pixels)
     except KeyboardInterrupt:
         pass
 
 
 class CustomAddon:
     def response(self, flow: HTTPFlow) -> None:
+        if (
+            flow.request.method == "POST"
+            and "https://backend.wplace.live/s0/pixel" in flow.request.url
+        ):
+            if flow.response is not None:
+                now = datetime.now()
+                result = json.loads(flow.response.get_text() or "")
+                log = f"{now} status:{flow.response.status_code} painted:{result['painted']}"
+
+                with open("data/log", "a") as file:
+                    file.write(log)
+                print(log)
+            else:
+                print("no response!")
+            return
+
         if "https://backend.wplace.live/me" == flow.request.url:
             try:
                 cookies = flow.request.headers.get("cookie")
@@ -79,7 +99,7 @@ class CustomAddon:
 
                 if len(data["colors"]) == 1:  # dumb check
                     data = data | get_pixels(
-                        caps["charges"], caps["colors_bitmap"], todo_pixels
+                        caps["charges"] - 1, caps["colors_bitmap"], todo_pixels
                     )
 
                     path_split = flow.request.path.split("/")
@@ -88,7 +108,7 @@ class CustomAddon:
                     flow.request.path = "/".join(path_split)
 
                 flow.request.set_text(json.dumps(data))
-                print(data)
+                # print(data)
         except Exception as e:
             print(2)
             print(e)

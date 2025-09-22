@@ -136,5 +136,6 @@ def paint_pixel(cookie: str, sb):
     # captcha
     sb.sleep(4)
     sb.click(".z-100")
+    sb.sleep(1)
 
     sb.click("div.absolute.bottom-0.left-1\\/2.-translate-x-1\\/2")
