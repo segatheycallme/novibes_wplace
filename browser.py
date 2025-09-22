@@ -14,7 +14,7 @@ async def run_async(cookies: list[str]):
 
 
 def run(cookies: list[str]):
-    with SB(uc=True, headed=True, proxy=PROXY) as sb:
+    with SB(uc=True, headed=False, proxy=PROXY) as sb:
         # set location (not needed)
         sb.open(URL)
         sb.execute_script(
@@ -23,11 +23,12 @@ def run(cookies: list[str]):
 
         while True:
             for cookie in cookies:
-                try:
-                    paint_pixel(cookie, sb)
-                except Exception as err:
-                    print(f"paint_pixel failed for user f{cookie}, reason: {err}")
-                    # retry
+                while True:
+                    try:
+                        paint_pixel(cookie, sb)
+                        break
+                    except Exception as err:
+                        print(f"paint_pixel failed for user f{cookie}, reason: {err}")
             try:
                 # TODO: better 15 min timer loop here
                 sb.sleep(10 * 60)
@@ -130,8 +131,9 @@ def paint_pixel(cookie: str, sb):
     sb.sleep(1)
     sb.refresh()
 
-    sb.click("div.absolute.bottom-3.left-1\\/2.z-30.-translate-x-1\\/2")
     sb.click_with_offset("body", 200, 200)  # somewhere on canvas
+    sb.sleep(0.5)
+    sb.click("//button[text()=' Paint']")
 
     # captcha
     sb.sleep(4)
