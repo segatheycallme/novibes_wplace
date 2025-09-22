@@ -56,11 +56,11 @@ class CustomAddon:
             if flow.response is not None:
                 now = datetime.now()
                 result = json.loads(flow.response.get_text() or "")
-                log = f"{now} status:{flow.response.status_code} painted:{result['painted']}"
+                log = f"{now} status:{flow.response.status_code} painted:{result['painted']}\n"
 
                 with open("data/log", "a") as file:
                     file.write(log)
-                print(log)
+                print(log, end="")
             else:
                 print("no response!")
             return
