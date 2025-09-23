@@ -116,7 +116,7 @@ def generate_pixels(png_path: str, tx: int, ty: int, px: int, py: int):
     x = px + tx * 1000
     y = py + ty * 1000
     for pixel in img_data:
-        color = color_lookup.get(pixel)
+        color = get_color(pixel)
         if color is None:
             color = 64  # impossible color
         new_todo[x // 1000][y // 1000][color].add((x % 1000, y % 1000))
@@ -170,3 +170,26 @@ def dict_union(a: dict, b: dict):
                 final[x][y][color] = a[x][y][color] | b[x][y][color]
 
     return final
+
+
+def get_color(color: tuple[int, int, int, int]) -> int | None:
+    if color_lookup.get(color) is not None:
+        return color_lookup[color]
+    if color[3] != 255:
+        return 0
+
+    closest = None
+    diff = 255**2 * 3
+    for predefined_color in color_lookup.keys():
+        if predefined_color[3] != 255:
+            continue
+        new_diff = (
+            (predefined_color[0] - color[0]) ** 2
+            + (predefined_color[1] - color[1]) ** 2
+            + (predefined_color[2] - color[2]) ** 2
+        )
+        if new_diff < diff:
+            diff = new_diff
+            closest = color_lookup[predefined_color]
+
+    return closest
