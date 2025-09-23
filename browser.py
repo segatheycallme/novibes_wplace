@@ -1,5 +1,5 @@
-import asyncio
 from os.path import isfile
+from time import sleep
 
 from selenium.webdriver.common.keys import Keys
 from seleniumbase import SB
@@ -7,36 +7,27 @@ from seleniumbase import SB
 from main import PROXY, URL
 
 
-async def run_async(cookies: list[str]):
-    # wait for proxy to startup
-    await asyncio.sleep(3)
-    run(cookies)
-
-
 def run(cookies: list[str]):
-    with SB(uc=True, headed=False, proxy=PROXY) as sb:
-        # set location (not needed)
-        sb.open(URL)
-        sb.execute_script(
-            'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
-        )
-
-        while True:
+    while True:
+        with SB(uc=True, headed=False, proxy=PROXY) as sb:
+            # set location (not needed)
+            sb.open(URL)
+            sb.execute_script(
+                'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
+            )
             for cookie in cookies:
-                while True:
+                for i in range(3):  # 3 retries
                     try:
                         paint_pixel(cookie, sb)
+                        print(i, i)
                         break
                     except Exception as err:
-                        print(f"paint_pixel failed for user f{cookie}, reason: {err}")
-            try:
-                # TODO: better 15 min timer loop here
-                sb.sleep(10 * 60)
-            except KeyboardInterrupt:
-                break
-
-        print("Done!")
-        sb.sleep(5)
+                        print(
+                            f"paint_pixel({i}) failed for user f{cookie}, reason: {err}"
+                        )
+                    print(i)
+            sb.sleep(10)  # wait for proxy to handle requests
+        sleep(10 * 60)
 
 
 def get_cookies():
@@ -128,16 +119,14 @@ def paint_pixel(cookie: str, sb):
 
     # clear rules modal (stupid)
     # TODO: unnescessary refresh
-    sb.sleep(1)
+    sb.sleep(0.5)
     sb.refresh()
 
     sb.click_with_offset("body", 200, 200)  # somewhere on canvas
-    sb.sleep(0.5)
     sb.click("//button[text()=' Paint']")
 
     # captcha
     sb.sleep(4)
     sb.click(".z-100")
-    sb.sleep(1)
 
     sb.click("div.absolute.bottom-0.left-1\\/2.-translate-x-1\\/2")
