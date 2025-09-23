@@ -19,13 +19,11 @@ def run(cookies: list[str]):
                 for i in range(3):  # 3 retries
                     try:
                         paint_pixel(cookie, sb)
-                        print(i, i)
                         break
                     except Exception as err:
                         print(
                             f"paint_pixel({i}) failed for user f{cookie}, reason: {err}"
                         )
-                    print(i)
             sb.sleep(10)  # wait for proxy to handle requests
         sleep(10 * 60)
 
@@ -69,7 +67,7 @@ def get_cookies_for_acc(user, password, sb) -> str | None:
     sb.click("//button[text()='Log in']")
 
     # captcha
-    sb.sleep(4)
+    sb.sleep(6)
     sb.click(".mt-2.flex.flex-col.items-center.gap-1")
 
     sb.click("//a[text()=' Login with Google']")

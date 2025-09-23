@@ -1,8 +1,9 @@
 import asyncio
 import json
-from typing import Callable
 from datetime import datetime
+from typing import Callable
 
+import yaml
 from mitmproxy.http import HTTPFlow
 from mitmproxy.options import Options
 from mitmproxy.tools.dump import DumpMaster
@@ -19,12 +20,7 @@ capabilities = {}
 
 
 async def main():
-    # load image
-    global todo_pixels
-    todo_pixels = pixel_calc.generate_pixels(
-        "converted_chopsuy.png", 1141, 752, 340, 160
-    )
-    pixel_calc.update_pixels(todo_pixels)
+    load_config()
 
     # data parsing and logging in
     cookies = browser.get_cookies()
@@ -36,15 +32,31 @@ async def main():
 
 def main_loop():
     global todo_pixels
-    try:
-        while True:
-            print("awaiting")
-            input()
-            print("nothing")
-            # todo_pixels = pixel_calc.generate_pixels("smile.png", 1141, 751, 440, 570)
-            # pixel_calc.update_pixels(todo_pixels)
-    except KeyboardInterrupt:
-        pass
+    while True:
+        print("press ENTER to reload config.yaml")
+        input()
+        load_config()
+
+
+def load_config():
+    global todo_pixels
+
+    # load config
+    config = yaml.safe_load(open("config.yaml"))
+    print("loading config")
+
+    # load images
+    todo_pixels = {}
+    for image in config["images"]:
+        todo_pixels = pixel_calc.dict_union(
+            todo_pixels,
+            pixel_calc.generate_pixels(
+                image["file"], image["tx"], image["ty"], image["px"], image["py"]
+            ),
+        )
+        print(f"added template: {image['name']}")
+
+    pixel_calc.update_pixels(todo_pixels)
 
 
 class CustomAddon:
@@ -108,7 +120,6 @@ class CustomAddon:
                     flow.request.path = "/".join(path_split)
 
                 flow.request.set_text(json.dumps(data))
-                # print(data)
         except Exception as e:
             print(2)
             print(e)

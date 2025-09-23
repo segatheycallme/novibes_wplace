@@ -146,3 +146,27 @@ def update_pixels(todo_pixels):
         for y in todo_pixels[x].keys():
             for color in todo_pixels[x][y].keys():
                 todo_pixels[x][y][color] -= new_todo[x][y][color]
+
+
+def dict_union(a: dict, b: dict):
+    final = {}
+    for x in a.keys() | b.keys():
+        final[x] = {}
+        if a.get(x) is None:
+            final[x] = b[x]
+            continue
+        if b.get(x) is None:
+            final[x] = a[x]
+            continue
+        for y in a[x].keys() | b[x].keys():
+            final[x][y] = {}
+            if a[x].get(y) is None:
+                final[x][y] = b[x][y]
+                continue
+            if b[x].get(y) is None:
+                final[x][y] = a[x][y]
+                continue
+            for color in a[x][y].keys() | b[x][y].keys():
+                final[x][y][color] = a[x][y][color] | b[x][y][color]
+
+    return final
