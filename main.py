@@ -1,6 +1,7 @@
 import asyncio
 import json
 from datetime import datetime
+import os
 from typing import Callable
 
 import yaml
@@ -14,7 +15,8 @@ from pixel_calc import get_pixels
 
 URL = "https://wplace.live/"
 PROXY = "localhost:8080"
-HEADED = False
+HEADED = bool(os.environ.get("NOVIBES_HEADED")) or False
+CONFIG = os.environ.get("NOVIBES_CONFIG") or "config.yaml"
 
 todo_pixels = {}
 capabilities = {}
@@ -34,7 +36,7 @@ async def main():
 def main_loop():
     global todo_pixels
     while True:
-        print("press ENTER to reload config.yaml")
+        print("press ENTER to reload config")
         input()
         load_config()
 
@@ -43,7 +45,7 @@ def load_config():
     global todo_pixels
 
     # load config
-    config = yaml.safe_load(open("config.yaml"))
+    config = yaml.safe_load(open(CONFIG))
     print("loading config")
 
     # load images
