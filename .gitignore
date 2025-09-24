@@ -1,2 +1,5 @@
-data/
 __pycache__/
+downloaded_files/
+
+data/
+config.yaml

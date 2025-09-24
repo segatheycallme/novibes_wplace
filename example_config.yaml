@@ -1,0 +1,7 @@
+images:
+ - name: smile
+    file: smile.png
+    tx: 10
+    ty: 10
+    px: 0
+    py: 0
