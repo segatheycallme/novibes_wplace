@@ -4,17 +4,14 @@ from time import sleep
 from selenium.webdriver.common.keys import Keys
 from seleniumbase import SB
 
-from main import PROXY, URL
+from main import PROXY, URL, HEADED
 
 
 def run(cookies: list[str]):
     while True:
-        with SB(uc=True, headed=False, proxy=PROXY) as sb:
+        with SB(uc=True, headed=HEADED, proxy=PROXY) as sb:
             # set location (not needed)
             sb.open(URL)
-            sb.execute_script(
-                'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
-            )
             for cookie in cookies:
                 for i in range(3):  # 3 retries
                     try:
@@ -24,7 +21,7 @@ def run(cookies: list[str]):
                         print(
                             f"paint_pixel({i}) failed for user f{cookie}, reason: {err}"
                         )
-            sb.sleep(10)  # wait for proxy to handle requests
+                sb.sleep(7)  # wait for proxy to handle requests
         sleep(10 * 60)
 
 
@@ -67,7 +64,7 @@ def get_cookies_for_acc(user, password, sb) -> str | None:
     sb.click("//button[text()='Log in']")
 
     # captcha
-    sb.sleep(6)
+    sb.sleep(10)
     sb.click(".mt-2.flex.flex-col.items-center.gap-1")
 
     sb.click("//a[text()=' Login with Google']")
@@ -89,7 +86,15 @@ def get_cookies_for_acc(user, password, sb) -> str | None:
 
 def paint_pixel(cookie: str, sb):
     # assume already on wplace.live
-    sb.execute_cdp_cmd("Storage.clearCookies", {})  # possibly useless
+
+    # clear old data to avoid detection
+    sb.execute_cdp_cmd("Storage.clearCookies", {})
+    sb.execute_script("localStorage.clear()")
+    sb.execute_script("sessionStorage.clear()")
+
+    sb.execute_script(
+        'localStorage.setItem("location",\'{"lng":20.64382364844073,"lat":43.11796421702974,"zoom":16.660873669103147}\')'
+    )
     sb.execute_cdp_cmd(
         "Storage.setCookies",
         {

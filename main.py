@@ -14,6 +14,7 @@ from pixel_calc import get_pixels
 
 URL = "https://wplace.live/"
 PROXY = "localhost:8080"
+HEADED = False
 
 todo_pixels = {}
 capabilities = {}
