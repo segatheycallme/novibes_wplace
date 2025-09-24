@@ -1,6 +1,12 @@
 images:
-  - name: chopsuy
-    file: converted_chopsuy.png
+  # - name: premium colors
+  #   file: premium_colors.png
+  #   tx: 1141
+  #   ty: 752
+  #   px: 442
+  #   py: 198
+  - name: chopsuy premium
+    file: converted_chopsuy2.png
     tx: 1141
     ty: 752
     px: 290
