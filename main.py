@@ -20,6 +20,7 @@ CONFIG = os.environ.get("NOVIBES_CONFIG") or "config.yaml"
 
 todo_pixels = {}
 capabilities = {}
+mode = "bfs"
 
 
 async def main():
@@ -34,7 +35,6 @@ async def main():
 
 
 def main_loop():
-    global todo_pixels
     while True:
         print("press ENTER to reload config")
         input()
@@ -42,11 +42,13 @@ def main_loop():
 
 
 def load_config():
-    global todo_pixels
+    global todo_pixels, mode
 
     # load config
     config = yaml.safe_load(open(CONFIG))
     print("loading config")
+
+    mode = config["mode"] or "bfs"
 
     # load images
     todo_pixels = {}
@@ -120,7 +122,7 @@ class CustomAddon:
                         int(caps["charges"]) - 1,
                         caps["colors_bitmap"],
                         todo_pixels,
-                        mode="bfs",
+                        mode=mode,
                     )
 
                     path_split = flow.request.path.split("/")

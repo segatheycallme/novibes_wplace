@@ -1,5 +1,6 @@
+mode: bfs
 images:
- - name: smile
+  - name: smile
     file: smile.png
     tx: 10
     ty: 10
