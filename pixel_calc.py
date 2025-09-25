@@ -76,18 +76,23 @@ def get_pixels(pixels_num: int, colors_bitmap: int, todo_pixels, skip_transparen
     coords = []
     for tx in todo_pixels.keys():
         for ty in todo_pixels[tx].keys():
-            for color in todo_pixels[tx][ty].keys():
-                if skip_transparent and color == 0:
-                    continue
-                if color > 31 and not (colors_bitmap & (1 << (color - 32))):
-                    # premium color not avalaible
-                    continue
+            for x in range(1000):
+                for y in range(1000):
+                    color = todo_pixels[tx][ty][x][y]
+                    if color == 64:
+                        continue
+                    if skip_transparent and color == 0:
+                        continue
+                    if color > 31 and not (colors_bitmap & (1 << (color - 32))):
+                        # premium color not avalaible
+                        continue
+                    if len(colors) >= pixels_num:
+                        break
 
-                while len(colors) < pixels_num and len(todo_pixels[tx][ty][color]) > 0:
-                    pixel = todo_pixels[tx][ty][color].pop()
-                    coords.append(pixel[0])
-                    coords.append(pixel[1])
+                    coords.append(x)
+                    coords.append(y)
                     colors.append(color)
+                    todo_pixels[tx][ty][x][y] = 64
             if len(colors) > 0:
                 return {"colors": colors, "coords": coords, "tx": tx, "ty": ty}
 
@@ -107,7 +112,7 @@ def generate_pixels(png_path: str, tx: int, ty: int, px: int, py: int):
         new_todo[tx + x] = {}
         for y in range((h - 1 + py) // 1000 + 1):
             # bloat
-            new_todo[tx + x][ty + y] = {i: set() for i in range(64)}
+            new_todo[tx + x][ty + y] = [[64 for _ in range(1000)] for _ in range(1000)]
 
     x = px + tx * 1000
     y = py + ty * 1000
@@ -115,7 +120,7 @@ def generate_pixels(png_path: str, tx: int, ty: int, px: int, py: int):
         color = get_color(pixel)
         if color is None:
             color = 64  # impossible color
-        new_todo[x // 1000][y // 1000][color].add((x % 1000, y % 1000))
+        new_todo[x // 1000][y // 1000][x % 1000][y % 1000] = color
 
         x += 1
         if x >= w + px + tx * 1000:
@@ -138,34 +143,45 @@ def update_pixels(todo_pixels):
                 new_todo[tx] = {}
             new_todo[tx][ty] = gen[tx][ty]
 
-    for x in todo_pixels.keys():
-        for y in todo_pixels[x].keys():
-            for color in todo_pixels[x][y].keys():
-                todo_pixels[x][y][color] -= new_todo[x][y][color]
+    for tx in todo_pixels.keys():
+        for ty in todo_pixels[tx].keys():
+            for x in range(1000):
+                for y in range(1000):
+                    if todo_pixels[tx][ty][x][y] == new_todo[tx][ty][x][y]:
+                        todo_pixels[tx][ty][x][y] = 64
 
 
 def dict_union(a: dict, b: dict):
     final = {}
-    for x in a.keys() | b.keys():
-        final[x] = {}
-        if a.get(x) is None:
-            final[x] = b[x]
+    for tx in a.keys() | b.keys():
+        final[tx] = {}
+        if a.get(tx) is None:
+            final[tx] = b[tx]
             continue
-        if b.get(x) is None:
-            final[x] = a[x]
+        if b.get(tx) is None:
+            final[tx] = a[tx]
             continue
-        for y in a[x].keys() | b[x].keys():
-            final[x][y] = {}
-            if a[x].get(y) is None:
-                final[x][y] = b[x][y]
+        for ty in a[tx].keys() | b[tx].keys():
+            final[tx][ty] = {}
+            if a[tx].get(ty) is None:
+                final[tx][ty] = b[tx][ty]
                 continue
-            if b[x].get(y) is None:
-                final[x][y] = a[x][y]
+            if b[tx].get(ty) is None:
+                final[tx][ty] = a[tx][ty]
                 continue
-            for color in a[x][y].keys() | b[x][y].keys():
-                final[x][y][color] = a[x][y][color] | b[x][y][color]
+            final[tx][ty] = tile_union(a[tx][ty], b[tx][ty])
 
     return final
+
+
+def tile_union(a: list[list[int]], b: list[list[int]]):
+    res = a
+    for x in range(1000):
+        for y in range(1000):
+            if b[x][y] != 64:
+                res[x][y] = b[x][y]
+
+    return res
 
 
 def get_color(color: tuple[int, int, int, int]) -> int | None:
@@ -189,3 +205,17 @@ def get_color(color: tuple[int, int, int, int]) -> int | None:
             closest = color_lookup[predefined_color]
 
     return closest
+
+
+# inverse_lookup = {v: k for k, v in color_lookup.items()}
+# inverse_lookup[64] = (0, 0, 0, 0)
+#
+# pixels = generate_pixels("smile.png", 1141, 752, 440, 160)
+# update_pixels(pixels)
+# print(get_pixels(100, 0, pixels))
+# img = Image.new("RGBA", (1000, 1000))
+# for x in range(1000):
+#     for y in range(1000):
+#         img.putpixel((x, y), inverse_lookup[pixels[1141][752][x][y]])
+#
+# img.save("hi.png")
