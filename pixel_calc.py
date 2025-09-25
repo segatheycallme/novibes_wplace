@@ -71,28 +71,27 @@ color_lookup = {
 }
 
 
-def get_pixels(pixels_num: int, colors_bitmap: int, todo_pixels, skip_transparent=True):
-    colors = []
-    coords = []
+def get_pixels(
+    pixels_num: int, colors_bitmap: int, todo_pixels, mode="v", skip_transparent=True
+):
     for tx in todo_pixels.keys():
         for ty in todo_pixels[tx].keys():
-            for x in range(1000):
-                for y in range(1000):
-                    color = todo_pixels[tx][ty][x][y]
-                    if color == 64:
-                        continue
-                    if skip_transparent and color == 0:
-                        continue
-                    if color > 31 and not (colors_bitmap & (1 << (color - 32))):
-                        # premium color not avalaible
-                        continue
-                    if len(colors) >= pixels_num:
-                        break
+            match mode:
+                case "bfs":
+                    coords, colors = tile_bfs(
+                        pixels_num,
+                        colors_bitmap,
+                        todo_pixels[tx][ty],
+                        skip_transparent=skip_transparent,
+                    )
+                case _:
+                    coords, colors = tile_vertical(
+                        pixels_num,
+                        colors_bitmap,
+                        todo_pixels[tx][ty],
+                        skip_transparent=skip_transparent,
+                    )
 
-                    coords.append(x)
-                    coords.append(y)
-                    colors.append(color)
-                    todo_pixels[tx][ty][x][y] = 64
             if len(colors) > 0:
                 return {"colors": colors, "coords": coords, "tx": tx, "ty": ty}
 
@@ -207,15 +206,104 @@ def get_color(color: tuple[int, int, int, int]) -> int | None:
     return closest
 
 
+def tile_vertical(
+    pixels_num: int, colors_bitmap: int, tile: list[list[int]], skip_transparent=True
+):
+    coords = []
+    colors = []
+    for x in range(1000):
+        for y in range(1000):
+            color = tile[x][y]
+            if color == 64:
+                continue
+            if skip_transparent and color == 0:
+                continue
+            if color > 31 and not (colors_bitmap & (1 << (color - 32))):
+                # premium color not avalaible
+                continue
+
+            coords.append(x)
+            coords.append(y)
+            colors.append(color)
+            tile[x][y] = 64
+
+            if len(colors) >= pixels_num:
+                return coords, colors
+
+    return coords, colors
+
+
+def tile_bfs(
+    pixels_num: int,
+    colors_bitmap: int,
+    tile: list[list[int]],
+    skip_transparent=True,
+):
+    def bfs(x, y, depth, visited):
+        res = []
+
+        if x < 0 or y < 0 or x >= 1000 or y >= 1000:
+            return res
+
+        if (x, y) in visited:
+            return res
+        visited.add((x, y))
+
+        color = tile[x][y]
+        if color == 64:
+            return res
+        if skip_transparent and color == 0:
+            return res
+        if color > 31 and not (colors_bitmap & (1 << (color - 32))):
+            # premium color not avalaible
+            return res
+
+        res.append((depth, x, y, color))
+
+        if depth < pixels_num:
+            res.extend(bfs(x + 1, y, depth + 1, visited))
+            res.extend(bfs(x - 1, y, depth + 1, visited))
+            res.extend(bfs(x, y + 1, depth + 1, visited))
+            res.extend(bfs(x, y - 1, depth + 1, visited))
+
+        return res
+
+    coords = []
+    colors = []
+    for x in range(1000):
+        for y in range(1000):
+            color = tile[x][y]
+            if color == 64:
+                continue
+            if skip_transparent and color == 0:
+                continue
+            if color > 31 and not (colors_bitmap & (1 << (color - 32))):
+                # premium color not avalaible
+                continue
+
+            neighbours = bfs(x, y, 0, set())
+            neighbours.sort()
+            for pixel in neighbours[: (pixels_num - len(colors))]:
+                coords.append(pixel[1])
+                coords.append(pixel[2])
+                colors.append(pixel[3])
+                tile[pixel[1]][pixel[2]] = 64
+
+            if len(colors) >= pixels_num:
+                return coords, colors
+
+    return coords, colors
+
+
 # inverse_lookup = {v: k for k, v in color_lookup.items()}
 # inverse_lookup[64] = (0, 0, 0, 0)
-#
-# pixels = generate_pixels("smile.png", 1141, 752, 440, 160)
+
+# pixels = generate_pixels("data/lain_g3.png", 1140, 751, 971, 750)
 # update_pixels(pixels)
-# print(get_pixels(100, 0, pixels))
+# print(len(get_pixels(120, 0, pixels, mode="bfs")["colors"]))
 # img = Image.new("RGBA", (1000, 1000))
 # for x in range(1000):
 #     for y in range(1000):
 #         img.putpixel((x, y), inverse_lookup[pixels[1141][752][x][y]])
-#
+
 # img.save("hi.png")

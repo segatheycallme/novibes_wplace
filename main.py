@@ -70,8 +70,11 @@ class CustomAddon:
         ):
             if flow.response is not None:
                 now = datetime.now()
-                result = json.loads(flow.response.get_text() or "")
-                log = f"{now} status:{flow.response.status_code} painted:{result['painted']}\n"
+                if flow.response.status_code == 200:
+                    result = json.loads(flow.response.get_text() or "")
+                    log = f"{now} status:{flow.response.status_code} painted:{result['painted']}\n"
+                else:
+                    log = f"{now} status:{flow.response.status_code} body:{flow.request.get_text()} response:{flow.response.get_text()}\n"
 
                 with open("data/log", "a") as file:
                     file.write(log)
@@ -114,7 +117,10 @@ class CustomAddon:
 
                 if len(data["colors"]) == 1:  # dumb check
                     data = data | get_pixels(
-                        caps["charges"] - 1, caps["colors_bitmap"], todo_pixels
+                        int(caps["charges"]) - 1,
+                        caps["colors_bitmap"],
+                        todo_pixels,
+                        mode="bfs",
                     )
 
                     path_split = flow.request.path.split("/")
