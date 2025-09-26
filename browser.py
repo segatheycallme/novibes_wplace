@@ -1,10 +1,11 @@
+import random
 from os.path import isfile
 from time import sleep
 
 from selenium.webdriver.common.keys import Keys
 from seleniumbase import SB
 
-from main import PROXY, URL, HEADED
+from main import HEADED, PROXY, URL
 
 
 def run(cookies: list[str]):
@@ -22,7 +23,7 @@ def run(cookies: list[str]):
                             f"paint_pixel({i}) failed for user f{cookie}, reason: {err}"
                         )
                 sb.sleep(7)  # wait for proxy to handle requests
-        sleep(10 * 60)
+        sleep((25 + random.random() * 5) * 60)
 
 
 def get_cookies():
