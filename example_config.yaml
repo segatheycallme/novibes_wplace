@@ -1,4 +1,5 @@
 mode: bfs
+skip_transparent: true
 images:
   - name: smile
     file: smile.png

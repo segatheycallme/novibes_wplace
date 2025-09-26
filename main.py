@@ -21,6 +21,7 @@ CONFIG = os.environ.get("NOVIBES_CONFIG") or "config.yaml"
 todo_pixels = {}
 capabilities = {}
 mode = "bfs"
+skip_transparent = True
 
 
 async def main():
@@ -42,13 +43,14 @@ def main_loop():
 
 
 def load_config():
-    global todo_pixels, mode
+    global todo_pixels, mode, skip_transparent
 
     # load config
     config = yaml.safe_load(open(CONFIG))
     print("loading config")
 
     mode = config["mode"] or "bfs"
+    skip_transparent = bool(config["skip_transparent"])
 
     # load images
     todo_pixels = {}
@@ -126,6 +128,7 @@ class CustomAddon:
                         caps["colors_bitmap"],
                         todo_pixels,
                         mode=mode,
+                        skip_transparent=skip_transparent,
                     )
 
                     path_split = flow.request.path.split("/")
