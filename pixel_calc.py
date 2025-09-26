@@ -239,15 +239,16 @@ def tile_bfs(
     tile: list[list[int]],
     skip_transparent=True,
 ):
-    def bfs(x, y, depth, visited):
+    def bfs(x, y, depth, visited: dict):
         res = []
 
         if x < 0 or y < 0 or x >= 1000 or y >= 1000:
             return res
 
-        if (x, y) in visited:
-            return res
-        visited.add((x, y))
+        if visited.get((x, y)) is not None:
+            if visited[(x, y)] <= depth:
+                return res
+        visited[(x, y)] = depth
 
         color = tile[x][y]
         if color == 64:
@@ -281,7 +282,7 @@ def tile_bfs(
                 # premium color not avalaible
                 continue
 
-            neighbours = bfs(x, y, 0, set())
+            neighbours = bfs(x, y, 0, {})
             neighbours.sort()
             for pixel in neighbours[: (pixels_num - len(colors))]:
                 coords.append(pixel[1])
@@ -295,15 +296,7 @@ def tile_bfs(
     return coords, colors
 
 
-# inverse_lookup = {v: k for k, v in color_lookup.items()}
-# inverse_lookup[64] = (0, 0, 0, 0)
-
-# pixels = generate_pixels("data/lain_g3.png", 1140, 751, 971, 750)
+# pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
+# pixels = generate_pixels("data/chopsuy_n.png", 1141, 752, 290, 160)
 # update_pixels(pixels)
-# print(len(get_pixels(120, 0, pixels, mode="bfs")["colors"]))
-# img = Image.new("RGBA", (1000, 1000))
-# for x in range(1000):
-#     for y in range(1000):
-#         img.putpixel((x, y), inverse_lookup[pixels[1141][752][x][y]])
-
-# img.save("hi.png")
+# print((get_pixels(100, 0, pixels, mode="bfs")["coords"]))
