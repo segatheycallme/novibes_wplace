@@ -74,9 +74,12 @@ class CustomAddon:
                 now = datetime.now()
                 if flow.response.status_code == 200:
                     result = json.loads(flow.response.get_text() or "")
-                    log = f"{now} status:{flow.response.status_code} painted:{result['painted']}\n"
+                    log = f"{now} status: painted {result['painted']} pixels\n"
                 else:
-                    log = f"{now} status:{flow.response.status_code} body:{flow.request.get_text()} response:{flow.response.get_text()}\n"
+                    if "[]" in (flow.request.get_text() or ""):
+                        log = f"{now} status: no pixels remaining!\n"
+                    else:
+                        log = f"{now} status: error - {flow.response.status_code} body:{flow.request.get_text()} response:{flow.response.get_text()}\n"
 
                 with open("data/log", "a") as file:
                     file.write(log)
