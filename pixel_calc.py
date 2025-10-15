@@ -126,6 +126,27 @@ def generate_pixels(png_path: str, tx: int, ty: int, px: int, py: int):
             x -= w
             y += 1
 
+    for tx in new_todo.keys():
+        for ty in new_todo[tx].keys():
+            tile = new_todo[tx][ty]
+            for x in range(1, 999):
+                for y in range(1, 999):
+                    color = tile[x][y] & 0x7F
+                    if not (
+                        (color == (tile[x][y - 1] & 0x7F))
+                        and (color == (tile[x][y + 1] & 0x7F))
+                        and (color == (tile[x - 1][y] & 0x7F))
+                        and (color == (tile[x + 1][y] & 0x7F))
+                    ):
+                        tile[x][y] |= 0x80
+            for z in range(1000):
+                tile[0][z] |= 0x100
+                tile[999][z] |= 0x100
+                tile[z][0] |= 0x100
+                tile[z][999] |= 0x100
+
+    # bits   : 0000 000E Cxxx xxxx
+
     return new_todo
 
 
@@ -133,10 +154,16 @@ def update_pixels(todo_pixels):
     new_todo = {}
     for tx in todo_pixels.keys():
         for ty in todo_pixels[tx].keys():
-            urllib.request.urlretrieve(
+            req = urllib.request.Request(
                 f"https://backend.wplace.live/files/s0/tiles/{tx}/{ty}.png",
-                f"data/{tx}_{ty}.png",
+                headers={"User-Agent": "hahah"},
             )
+            with (
+                urllib.request.urlopen(req) as response,
+                open(f"data/{tx}_{ty}.png", "wb") as file,
+            ):
+                file.write(response.read())
+
             gen = generate_pixels(f"data/{tx}_{ty}.png", tx, ty, 0, 0)
             if new_todo.get(tx) is None:
                 new_todo[tx] = {}
@@ -146,7 +173,10 @@ def update_pixels(todo_pixels):
         for ty in todo_pixels[tx].keys():
             for x in range(1000):
                 for y in range(1000):
-                    if todo_pixels[tx][ty][x][y] == new_todo[tx][ty][x][y]:
+                    if (
+                        todo_pixels[tx][ty][x][y] & 0x7F
+                        == new_todo[tx][ty][x][y] & 0x7F
+                    ):
                         todo_pixels[tx][ty][x][y] = 64
 
 
@@ -213,7 +243,7 @@ def tile_vertical(
     colors = []
     for x in range(1000):
         for y in range(1000):
-            color = tile[x][y]
+            color = tile[x][y] & 0x7F
             if color == 64:
                 continue
             if skip_transparent and color == 0:
@@ -239,6 +269,8 @@ def tile_bfs(
     tile: list[list[int]],
     skip_transparent=True,
 ):
+    pixels_num = 5
+
     def bfs(x, y, depth, visited: dict):
         res = []
 
@@ -250,7 +282,7 @@ def tile_bfs(
                 return res
         visited[(x, y)] = depth
 
-        color = tile[x][y]
+        color = tile[x][y] & 0x7F
         if color == 64:
             return res
         if skip_transparent and color == 0:
@@ -259,7 +291,7 @@ def tile_bfs(
             # premium color not avalaible
             return res
 
-        res.append((depth, x, y, color))
+        res.append((-(tile[x][y] >> 7), depth, x, y, color))
 
         if depth < pixels_num:
             res.extend(bfs(x + 1, y, depth + 1, visited))
@@ -271,9 +303,10 @@ def tile_bfs(
 
     coords = []
     colors = []
+    pixels = set()
     for x in range(1000):
         for y in range(1000):
-            color = tile[x][y]
+            color = tile[x][y] & 0x7F
             if color == 64:
                 continue
             if skip_transparent and color == 0:
@@ -284,13 +317,21 @@ def tile_bfs(
 
             neighbours = bfs(x, y, 0, {})
             neighbours.sort()
-            for pixel in neighbours[: (pixels_num - len(colors))]:
-                coords.append(pixel[1])
-                coords.append(pixel[2])
-                colors.append(pixel[3])
-                tile[pixel[1]][pixel[2]] = 64
+            # __import__("pprint").pprint(neighbours)
+            for i in range(len(neighbours)):
+                pixel = neighbours[i]
+                pixels.add((pixel[2], pixel[3], pixel[4]))
+                tile[pixel[2]][pixel[3]] = 64
 
-            if len(colors) >= pixels_num:
+                if len(pixels) >= pixels_num:
+                    break
+
+            if len(pixels) >= pixels_num:
+                for pixel in pixels:
+                    coords.append(pixel[0])
+                    coords.append(pixel[1])
+                    colors.append(pixel[2])
+                # print(pixels)
                 return coords, colors
 
     return coords, colors
@@ -299,4 +340,4 @@ def tile_bfs(
 # pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
 # pixels = generate_pixels("data/chopsuy_n.png", 1141, 752, 290, 160)
 # update_pixels(pixels)
-# print((get_pixels(100, 0, pixels, mode="bfs")["coords"]))
+# print((get_pixels(10, 0, pixels, mode="bfs")["coords"]))
