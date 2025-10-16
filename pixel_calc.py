@@ -77,6 +77,14 @@ def get_pixels(
     for tx in todo_pixels.keys():
         for ty in todo_pixels[tx].keys():
             match mode:
+                case "ebfs":
+                    pixels_num = 5
+                    coords, colors = tile_edge_bfs(
+                        pixels_num,
+                        colors_bitmap,
+                        todo_pixels[tx][ty],
+                        skip_transparent=skip_transparent,
+                    )
                 case "bfs":
                     coords, colors = tile_bfs(
                         pixels_num,
@@ -268,9 +276,8 @@ def tile_bfs(
     colors_bitmap: int,
     tile: list[list[int]],
     skip_transparent=True,
+    filter: int | None = None,
 ):
-    pixels_num = 5
-
     def bfs(x, y, depth, visited: dict):
         res = []
 
@@ -290,8 +297,10 @@ def tile_bfs(
         if color > 31 and not (colors_bitmap & (1 << (color - 32))):
             # premium color not avalaible
             return res
+        if filter is not None and tile[x][y] >> 7 != filter:
+            return res
 
-        res.append((-(tile[x][y] >> 7), depth, x, y, color))
+        res.append((depth, x, y, color))
 
         if depth < pixels_num:
             res.extend(bfs(x + 1, y, depth + 1, visited))
@@ -314,14 +323,15 @@ def tile_bfs(
             if color > 31 and not (colors_bitmap & (1 << (color - 32))):
                 # premium color not avalaible
                 continue
+            if filter is not None and tile[x][y] >> 7 != filter:
+                continue
 
             neighbours = bfs(x, y, 0, {})
             neighbours.sort()
-            # __import__("pprint").pprint(neighbours)
             for i in range(len(neighbours)):
                 pixel = neighbours[i]
-                pixels.add((pixel[2], pixel[3], pixel[4]))
-                tile[pixel[2]][pixel[3]] = 64
+                pixels.add((pixel[1], pixel[2], pixel[3]))
+                tile[pixel[1]][pixel[2]] = 64
 
                 if len(pixels) >= pixels_num:
                     break
@@ -331,13 +341,53 @@ def tile_bfs(
                     coords.append(pixel[0])
                     coords.append(pixel[1])
                     colors.append(pixel[2])
-                # print(pixels)
                 return coords, colors
 
+    for pixel in pixels:
+        coords.append(pixel[0])
+        coords.append(pixel[1])
+        colors.append(pixel[2])
+    return coords, colors
+
+
+def tile_edge_bfs(
+    pixels_num: int,
+    colors_bitmap: int,
+    tile: list[list[int]],
+    skip_transparent=True,
+):
+    coords = []
+    colors = []
+
+    for filter in [2, 1, 0]:
+        newcoords, newcolors = tile_bfs(
+            pixels_num - len(colors),
+            colors_bitmap,
+            tile,
+            skip_transparent=skip_transparent,
+            filter=filter,
+        )
+        coords.extend(newcoords)
+        colors.extend(newcolors)
+        if len(colors) >= pixels_num:
+            break
     return coords, colors
 
 
 # pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
 # pixels = generate_pixels("data/chopsuy_n.png", 1141, 752, 290, 160)
 # update_pixels(pixels)
-# print((get_pixels(10, 0, pixels, mode="bfs")["coords"]))
+# # print((get_pixels(10, 0, pixels, mode="bfs")["coords"]))
+# pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
+# # pixels = generate_pixels("data/chopsuy_n.png", 1141, 752, 290, 160)
+# # update_pixels(pixels)
+# mimage = [[" " for _ in range(10)] for _ in range(10)]
+#
+# for i in range(10):
+#     coords = get_pixels(5, 0, pixels, mode="ebfs")["coords"]
+#     for i in range(5):
+#         mimage[coords[i * 2 + 1]][coords[i * 2]] = "#"
+#     __import__("pprint").pprint(mimage)
+#     print("----------------------------------------------------")
+#
+# TODO: TEST
