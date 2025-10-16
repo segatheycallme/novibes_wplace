@@ -78,7 +78,6 @@ def get_pixels(
         for ty in todo_pixels[tx].keys():
             match mode:
                 case "ebfs":
-                    pixels_num = 5
                     coords, colors = tile_edge_bfs(
                         pixels_num,
                         colors_bitmap,
