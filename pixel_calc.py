@@ -323,35 +323,41 @@ def tile_bfs(
     coords = []
     colors = []
     pixels = set()
-    for x in range(1000):
-        for y in range(1000):
-            color = tile[x][y] & 0x7F
-            if color == 64:
-                continue
-            if skip_transparent and color == 0:
-                continue
-            if color > 31 and not (colors_bitmap & (1 << (color - 32))):
-                # premium color not avalaible
-                continue
-            if filter is not None and tile[x][y] >> 7 != filter:
-                continue
+    for z in range(1 << 20):
+        x, y = 0, 0
+        for i in range(10):
+            x |= (z & (1 << (i * 2 + 1))) >> i + 1
+            y |= (z & (1 << (i * 2))) >> i
+        if x > 999 or y > 999:
+            continue
 
-            neighbours = bfs(x, y, 0, {})
-            neighbours.sort()
-            for i in range(len(neighbours)):
-                pixel = neighbours[i]
-                pixels.add((pixel[1], pixel[2], pixel[3]))
-                tile[pixel[1]][pixel[2]] = 64
+        color = tile[x][y] & 0x7F
+        if color == 64:
+            continue
+        if skip_transparent and color == 0:
+            continue
+        if color > 31 and not (colors_bitmap & (1 << (color - 32))):
+            # premium color not avalaible
+            continue
+        if filter is not None and tile[x][y] >> 7 != filter:
+            continue
 
-                if len(pixels) >= pixels_num:
-                    break
+        neighbours = bfs(x, y, 0, {})
+        neighbours.sort()
+        for i in range(len(neighbours)):
+            pixel = neighbours[i]
+            pixels.add((pixel[1], pixel[2], pixel[3]))
+            tile[pixel[1]][pixel[2]] = 64
 
             if len(pixels) >= pixels_num:
-                for pixel in pixels:
-                    coords.append(pixel[0])
-                    coords.append(pixel[1])
-                    colors.append(pixel[2])
-                return coords, colors
+                break
+
+        if len(pixels) >= pixels_num:
+            for pixel in pixels:
+                coords.append(pixel[0])
+                coords.append(pixel[1])
+                colors.append(pixel[2])
+            return coords, colors
 
     for pixel in pixels:
         coords.append(pixel[0])
@@ -426,14 +432,14 @@ def tile_z_order(
 # pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
 # mimage = [[" " for _ in range(10)] for _ in range(10)]
 #
-# for i in range(100):
-#     coords = get_pixels(1, 0, pixels, mode="z")["coords"]
-#     for i in range(1):
+# for i in range(10):
+#     coords = get_pixels(10, 0, pixels, mode="bfs")["coords"]
+#     for i in range(10):
 #         mimage[coords[i * 2 + 1]][coords[i * 2]] = "#"
-#     # sleep(0.1)
+#     __import__("time").sleep(0.3)
 #     __import__("pprint").pprint(mimage)
 #     print("----------------------------------------------------")
-#
+
 
 # z = 0b110110
 # x, y = 0, 0
