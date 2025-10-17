@@ -91,6 +91,13 @@ def get_pixels(
                         todo_pixels[tx][ty],
                         skip_transparent=skip_transparent,
                     )
+                case "z":
+                    coords, colors = tile_z_order(
+                        pixels_num,
+                        colors_bitmap,
+                        todo_pixels[tx][ty],
+                        skip_transparent=skip_transparent,
+                    )
                 case _:
                     coords, colors = tile_vertical(
                         pixels_num,
@@ -377,20 +384,63 @@ def tile_edge_bfs(
     return coords, colors
 
 
+def tile_z_order(
+    pixels_num: int, colors_bitmap: int, tile: list[list[int]], skip_transparent=True
+):
+    coords = []
+    colors = []
+    for z in range(1 << 20):
+        x, y = 0, 0
+        for i in range(10):
+            x |= (z & (1 << (i * 2 + 1))) >> i + 1
+            y |= (z & (1 << (i * 2))) >> i
+        if x > 999 or y > 999:
+            continue
+
+        color = tile[x][y] & 0x7F
+        if color == 64:
+            continue
+        if skip_transparent and color == 0:
+            continue
+        if color > 31 and not (colors_bitmap & (1 << (color - 32))):
+            # premium color not avalaible
+            continue
+
+        coords.append(x)
+        coords.append(y)
+        colors.append(color)
+        tile[x][y] = 64
+
+        if len(colors) >= pixels_num:
+            return coords, colors
+
+    return coords, colors
+
+
 # pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
 # pixels = generate_pixels("data/chopsuy_n.png", 1141, 752, 290, 160)
 # update_pixels(pixels)
 # # print((get_pixels(10, 0, pixels, mode="bfs")["coords"]))
-# pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
 # # pixels = generate_pixels("data/chopsuy_n.png", 1141, 752, 290, 160)
 # # update_pixels(pixels)
+# pixels = generate_pixels("smile.png", 1141, 752, 0, 0)
 # mimage = [[" " for _ in range(10)] for _ in range(10)]
 #
-# for i in range(10):
-#     coords = get_pixels(5, 0, pixels, mode="ebfs")["coords"]
-#     for i in range(5):
+# for i in range(100):
+#     coords = get_pixels(1, 0, pixels, mode="z")["coords"]
+#     for i in range(1):
 #         mimage[coords[i * 2 + 1]][coords[i * 2]] = "#"
+#     # sleep(0.1)
 #     __import__("pprint").pprint(mimage)
 #     print("----------------------------------------------------")
 #
-# TODO: TEST
+
+# z = 0b110110
+# x, y = 0, 0
+# for i in range(10):
+#     x |= (z & (1 << (i * 2 + 1))) >> i + 1
+#     y |= (z & (1 << (i * 2))) >> i
+#     print(bin((1 << (i * 2 + 1))))
+#     # y |= z & (1 << (1 << i + 1))
+#
+# print(bin(x), bin(y))
