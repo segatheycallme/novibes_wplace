@@ -306,6 +306,10 @@ def tile_bfs(
             res.extend(bfs(x - 1, y, depth + 1, visited))
             res.extend(bfs(x, y + 1, depth + 1, visited))
             res.extend(bfs(x, y - 1, depth + 1, visited))
+            res.extend(bfs(x + 1, y + 1, depth + 1, visited))
+            res.extend(bfs(x + 1, y - 1, depth + 1, visited))
+            res.extend(bfs(x - 1, y - 1, depth + 1, visited))
+            res.extend(bfs(x - 1, y + 1, depth + 1, visited))
 
         return res
 
