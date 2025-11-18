@@ -41,7 +41,7 @@ def run_browser(cookies):
     global todo_pixels
     while True:
         browser.run(cookies)
-        sleep((25 + random.random() * 5) * 60)
+        sleep((15 + random.random() * 30) * 60)
         # sleep((random.random()) * 60)
         pixel_calc.update_pixels(todo_pixels)
 

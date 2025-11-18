@@ -74,6 +74,7 @@ color_lookup = {
 def get_pixels(
     pixels_num: int, colors_bitmap: int, todo_pixels, mode="v", skip_transparent=True
 ):
+    print("called get_pixels")
     for tx in todo_pixels.keys():
         for ty in todo_pixels[tx].keys():
             match mode:
@@ -107,6 +108,7 @@ def get_pixels(
                     )
 
             if len(colors) > 0:
+                print("finished get_pixels")
                 return {"colors": colors, "coords": coords, "tx": tx, "ty": ty}
 
     # :(
@@ -324,10 +326,8 @@ def tile_bfs(
     colors = []
     pixels = set()
     for z in range(1 << 20):
-        x, y = 0, 0
-        for i in range(10):
-            x |= (z & (1 << (i * 2 + 1))) >> i + 1
-            y |= (z & (1 << (i * 2))) >> i
+        x = deinterleave(z)
+        y = deinterleave(z >> 1)
         if x > 999 or y > 999:
             continue
 
@@ -390,16 +390,23 @@ def tile_edge_bfs(
     return coords, colors
 
 
+def deinterleave(x):
+    x &= 0x55555555
+    x = (x | (x >> 1)) & 0x33333333
+    x = (x | (x >> 2)) & 0x0F0F0F0F
+    x = (x | (x >> 4)) & 0x00FF00FF
+    x = (x | (x >> 8)) & 0x0000FFFF
+    return x
+
+
 def tile_z_order(
     pixels_num: int, colors_bitmap: int, tile: list[list[int]], skip_transparent=True
 ):
     coords = []
     colors = []
     for z in range(1 << 20):
-        x, y = 0, 0
-        for i in range(10):
-            x |= (z & (1 << (i * 2 + 1))) >> i + 1
-            y |= (z & (1 << (i * 2))) >> i
+        x = deinterleave(z)
+        y = deinterleave(z >> 1)
         if x > 999 or y > 999:
             continue
 
