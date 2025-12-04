@@ -17,7 +17,7 @@ def run(cookies: list[str]):
                     break
                 except Exception as err:
                     print(f"paint_pixel({i}) failed for user f{cookie}, reason: {err}")
-            sb.sleep(7)  # wait for proxy to handle requests
+            sb.sleep(60)  # wait for proxy to handle requests
 
 
 def get_cookies():

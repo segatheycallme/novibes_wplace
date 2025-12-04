@@ -1,9 +1,7 @@
 import asyncio
 import json
 import os
-import random
 from datetime import datetime
-from time import sleep
 from typing import Callable
 
 import yaml
@@ -38,12 +36,7 @@ async def main():
 
 
 def run_browser(cookies):
-    global todo_pixels
-    while True:
-        browser.run(cookies)
-        sleep((15 + random.random() * 30) * 60)
-        # sleep((random.random()) * 60)
-        pixel_calc.update_pixels(todo_pixels)
+    browser.run(cookies)
 
 
 def main_loop():
